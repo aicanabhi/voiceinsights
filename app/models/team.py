@@ -4,19 +4,17 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
-    ForeignKey,
-    Enum
+    ForeignKey
 )
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.db.base import Base
-from app.models.enums import UserRole
 
 
-class User(Base):
-    __tablename__ = "users"
+class Team(Base):
+    __tablename__ = "teams"
 
     id = Column(
         Integer,
@@ -27,39 +25,17 @@ class User(Base):
     organization_id = Column(
         Integer,
         ForeignKey("organizations.id", ondelete="CASCADE"),
-        nullable=True
+        nullable=False
     )
 
-    team_id = Column(
-        Integer,
-        ForeignKey("teams.id", ondelete="SET NULL"),
-        nullable=True
-    )
-
-    full_name = Column(
+    name = Column(
         String(150),
         nullable=False
     )
 
-    email = Column(
-        String(200),
-        unique=True,
-        nullable=False
-    )
-
-    phone = Column(
-        String(20),
-        nullable=True
-    )
-
-    password_hash = Column(
+    description = Column(
         String(255),
-        nullable=False
-    )
-
-    role = Column(
-        Enum(UserRole),
-        nullable=False
+        nullable=True
     )
 
     is_active = Column(
@@ -80,10 +56,11 @@ class User(Base):
 
     organization = relationship(
         "Organization",
-        back_populates="users"
+        back_populates="teams"
     )
 
-    team = relationship(
-        "Team",
-        back_populates="users"
+    users = relationship(
+        "User",
+        back_populates="team",
+        cascade="all, delete-orphan"
     )
