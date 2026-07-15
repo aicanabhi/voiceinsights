@@ -1,8 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings): 
-
+class Settings(BaseSettings):
     APP_NAME: str
     APP_VERSION: str
     DEBUG: bool
@@ -19,24 +18,32 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
+    DEEPGRAM_API_KEY: str
+    GROQ_API_KEY: str
+
     # Redis
     REDIS_HOST: str
     REDIS_PORT: int
-
-    # AI APIs
-    OPENAI_API_KEY: str = ""
-    DEEPGRAM_API_KEY: str = ""
+    REDIS_DB: int
 
     model_config = SettingsConfigDict(
         env_file=".env",
-        case_sensitive=True,
         extra="ignore"
     )
 
     @property
-    def DATABASE_URL(self) -> str:
+    def DATABASE_URL(self):
         return (
             f"postgresql+asyncpg://"
+            f"{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+            f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}"
+            f"/{self.DATABASE_NAME}"
+        )
+
+    @property
+    def SYNC_DATABASE_URL(self):
+        return (
+            f"postgresql+psycopg2://"
             f"{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}"
             f"/{self.DATABASE_NAME}"
