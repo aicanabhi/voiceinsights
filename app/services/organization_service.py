@@ -2,7 +2,11 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.organization import Organization
+from app.models.user import User
+from app.models.enums import UserRole
+
 from app.repositories.organization_repository import OrganizationRepository
+
 from app.schemas.organization import (
     OrganizationCreate,
     OrganizationUpdate,
@@ -25,7 +29,7 @@ class OrganizationService:
         if existing:
             raise HTTPException(
                 status_code=400,
-                detail="Organization already exists."
+                detail="Organization email already exists."
             )
 
         organization = Organization(
@@ -33,8 +37,9 @@ class OrganizationService:
             email=data.email,
             phone=data.phone,
             address=data.address,
-            website=data.website,
             industry=data.industry,
+            website=data.website,
+            is_active=True,
         )
 
         return await OrganizationRepository.create(
@@ -52,6 +57,7 @@ class OrganizationService:
     async def get_organization(
         db: AsyncSession,
         organization_id: int,
+        current_user: User,
     ):
 
         organization = await OrganizationRepository.get_by_id(
@@ -63,6 +69,15 @@ class OrganizationService:
             raise HTTPException(
                 status_code=404,
                 detail="Organization not found."
+            )
+
+        if (
+            current_user.role == UserRole.ORG_ADMIN
+            and current_user.organization_id != organization.id
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="You can access only your organization."
             )
 
         return organization
@@ -72,6 +87,7 @@ class OrganizationService:
         db: AsyncSession,
         organization_id: int,
         data: OrganizationUpdate,
+        current_user: User,
     ):
 
         organization = await OrganizationRepository.get_by_id(
@@ -85,15 +101,20 @@ class OrganizationService:
                 detail="Organization not found."
             )
 
-        update_data = data.model_dump(exclude_unset=True)
+        if (
+            current_user.role == UserRole.ORG_ADMIN
+            and current_user.organization_id != organization.id
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="You can update only your organization."
+            )
 
-        for key, value in update_data.items():
-            setattr(organization, key, value)
-
-        await db.commit()
-        await db.refresh(organization)
-
-        return organization
+        return await OrganizationRepository.update(
+            db,
+            organization,
+            data,
+        )
 
     @staticmethod
     async def delete_organization(

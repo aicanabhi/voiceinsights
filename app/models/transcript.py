@@ -16,11 +16,18 @@ from app.db.base import Base
 class Transcript(Base):
     __tablename__ = "transcripts"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     media_id = Column(
         Integer,
-        ForeignKey("media.id", ondelete="CASCADE"),
+        ForeignKey(
+            "media.id",
+            ondelete="CASCADE"
+        ),
         nullable=False
     )
 
@@ -44,4 +51,21 @@ class Transcript(Base):
         server_default=func.now()
     )
 
-    media = relationship("Media")
+    # Relationships
+    media = relationship(
+        "Media",
+        back_populates="transcripts"
+    )
+
+    analysis = relationship(
+        "Analysis",
+        back_populates="transcript",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+
+    segments = relationship(
+        "TranscriptSegment",
+        back_populates="transcript",
+        cascade="all, delete-orphan"
+    )

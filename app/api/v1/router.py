@@ -6,6 +6,8 @@ from app.api.v1.team import router as team_router
 from app.api.v1.user import router as user_router
 from app.api.v1.media import router as media_router
 from app.api.v1.transcript import router as transcript_router
+from app.api.v1.analysis import router as analysis_router
+
 
 api_router = APIRouter()
 
@@ -15,3 +17,4 @@ api_router.include_router(team_router)
 api_router.include_router(user_router)
 api_router.include_router(media_router)
 api_router.include_router(transcript_router)
+api_router.include_router(analysis_router)

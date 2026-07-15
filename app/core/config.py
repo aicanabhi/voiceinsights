@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
     DEEPGRAM_API_KEY: str
+    GROQ_API_KEY: str
 
     # Redis
     REDIS_HOST: str

@@ -11,6 +11,14 @@ from app.schemas.user import (
 
 from app.services.user_service import UserService
 
+from app.core.dependencies import (
+    get_current_user,
+    require_roles
+)
+
+from app.models.user import User
+from app.models.enums import UserRole
+
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
@@ -19,15 +27,26 @@ router = APIRouter(
 
 @router.post(
     "/",
-    response_model=UserResponse
+    response_model=UserResponse,
+    dependencies=[
+        Depends(
+            require_roles(
+                UserRole.SUPER_ADMIN,
+                UserRole.ORG_ADMIN,
+                UserRole.TEAM_LEAD
+            )
+        )
+    ]
 )
 async def create_user(
     user: UserCreate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     return await UserService.create_user(
-        db,
-        user
+        db=db,
+        user_data=user,
+        current_user=current_user
     )
 
 
@@ -36,9 +55,13 @@ async def create_user(
     response_model=list[UserResponse]
 )
 async def get_all_users(
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    return await UserService.get_all_users(db)
+    return await UserService.get_all_users(
+        db=db,
+        current_user=current_user
+    )
 
 
 @router.get(
@@ -47,11 +70,13 @@ async def get_all_users(
 )
 async def get_user(
     user_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     return await UserService.get_user_by_id(
         db,
-        user_id
+        user_id,
+        current_user=current_user
     )
 
 
@@ -62,12 +87,14 @@ async def get_user(
 async def update_user(
     user_id: int,
     user: UserUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     return await UserService.update_user(
         db,
         user_id,
-        user
+        user,
+        current_user=current_user
     )
 
 
@@ -76,9 +103,11 @@ async def update_user(
 )
 async def delete_user(
     user_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     return await UserService.delete_user(
         db,
-        user_id
+        user_id=user_id,
+        current_user=current_user
     )

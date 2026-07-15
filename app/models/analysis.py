@@ -4,6 +4,7 @@ from sqlalchemy import (
     ForeignKey,
     Text,
     Float,
+    Boolean,
     DateTime
 )
 
@@ -31,14 +32,43 @@ class Analysis(Base):
         nullable=False
     )
 
+    # AI Summary
     summary = Column(Text)
 
+    # Positive / Negative / Neutral
     sentiment = Column(Text)
 
+    # Compliance Score
     compliance_score = Column(Float)
 
+    # Professionalism Score
+    professionalism_score = Column(Float)
+
+    # Empathy Score
+    empathy_score = Column(Float)
+
+    # Overall Score
+    overall_score = Column(Float)
+
+    # Greeting Rule
+    greeting_followed = Column(
+        Boolean,
+        default=False
+    )
+
+    # Closing Rule
+    closing_followed = Column(
+        Boolean,
+        default=False
+    )
+
+    # Rule Violations
     violations = Column(Text)
 
+    # AI Suggestions
+    recommendations = Column(Text)
+
+    # Final AI Feedback
     ai_feedback = Column(Text)
 
     created_at = Column(
@@ -47,5 +77,6 @@ class Analysis(Base):
     )
 
     transcript = relationship(
-        "Transcript"
+        "Transcript",
+        back_populates="analysis"
     )
