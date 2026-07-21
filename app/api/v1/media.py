@@ -24,6 +24,7 @@ router = APIRouter(
 async def upload_media(
     organization_id: int,
     uploaded_by: int,
+    agent_id: int,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db)
 ):
@@ -31,6 +32,7 @@ async def upload_media(
         db,
         organization_id,
         uploaded_by,
+        agent_id,
         file
     )
 

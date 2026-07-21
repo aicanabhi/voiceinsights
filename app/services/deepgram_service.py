@@ -32,6 +32,13 @@ class DeepgramService:
         speaker_segments = []
 
         for utt in response.results.utterances:
+            print(
+                f"Speaker: {utt.speaker} | "
+                f"Start: {utt.start} | "
+                f"End: {utt.end} | "
+                f"Text: {utt.transcript}"
+            )
+
             speaker_segments.append({
                 "speaker": utt.speaker,
                 "start": utt.start,

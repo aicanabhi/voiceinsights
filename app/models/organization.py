@@ -19,13 +19,11 @@ class Organization(Base):
 
     name = Column(String(150), nullable=False)
 
-    email = Column(String(200), unique=True, nullable=False)
-
     phone = Column(String(20), nullable=True)
 
     address = Column(String(255), nullable=True)
 
-    industry = Column(String(100), nullable=True)
+    domain = Column(String(255),unique=True,nullable=False)
 
     website = Column(String(255), nullable=True)
 

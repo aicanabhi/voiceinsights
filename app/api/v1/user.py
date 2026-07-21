@@ -15,7 +15,6 @@ from app.core.dependencies import (
     get_current_user,
     require_roles
 )
-
 from app.models.user import User
 from app.models.enums import UserRole
 

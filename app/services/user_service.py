@@ -8,7 +8,10 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.team_repository import TeamRepository
 
-from app.core.security import hash_password
+from app.core.security import (
+    verify_password,
+    hash_password
+)
 from app.models.enums import UserRole
 
 
@@ -298,3 +301,34 @@ class UserService:
         return {
             "message": "User deleted successfully."
         }
+
+    @staticmethod
+    async def change_password(
+        db: AsyncSession,
+        current_user: User,
+        request
+    ):
+
+        if not verify_password(
+            request.current_password,
+            current_user.password_hash
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Current password is incorrect."
+            )
+
+        if request.new_password != request.confirm_password:
+            raise HTTPException(
+                status_code=400,
+                detail="Passwords do not match."
+            )
+
+        current_user.password_hash = hash_password(
+            request.new_password
+        )
+
+        return await UserRepository.change_password(
+            db,
+            current_user
+        )

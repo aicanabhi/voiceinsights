@@ -39,13 +39,13 @@ class OrganizationRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def get_by_email(
+    async def get_by_domain(
         db: AsyncSession,
-        email: str
+        domain: str
     ):
         result = await db.execute(
             select(Organization).where(
-                Organization.email == email
+                Organization.domain == domain
             )
         )
         return result.scalar_one_or_none()

@@ -21,23 +21,22 @@ class OrganizationService:
         data: OrganizationCreate,
     ):
 
-        existing = await OrganizationRepository.get_by_email(
+        existing = await OrganizationRepository.get_by_domain(
             db,
-            data.email,
+            data.domain,
         )
 
         if existing:
             raise HTTPException(
                 status_code=400,
-                detail="Organization email already exists."
+                detail="Organization domain already exists."
             )
 
         organization = Organization(
             name=data.name,
-            email=data.email,
             phone=data.phone,
             address=data.address,
-            industry=data.industry,
+            domain=data.domain,
             website=data.website,
             is_active=True,
         )

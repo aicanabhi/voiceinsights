@@ -87,3 +87,15 @@ class User(Base):
         "Team",
         back_populates="users"
     )
+
+    uploaded_media = relationship(
+        "Media",
+        foreign_keys="Media.uploaded_by",
+        back_populates="uploader"
+    )
+
+    assigned_media = relationship(
+        "Media",
+        foreign_keys="Media.agent_id",
+        back_populates="agent"
+    )

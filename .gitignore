@@ -1,3 +1,6 @@
 .env
 alembic/.env.env
 alembic/.env
+venv/
+__pycache__/
+.vscode/

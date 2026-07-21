@@ -32,6 +32,7 @@ class MediaService:
         db: AsyncSession,
         organization_id: int,
         uploaded_by: int,
+        agent_id: int,
         file: UploadFile
     ):
 
@@ -51,6 +52,7 @@ class MediaService:
         media = Media(
             organization_id=organization_id,
             uploaded_by=uploaded_by,
+            agent_id=agent_id,
             original_filename=file.filename,
             stored_filename=stored_filename,
             file_path=file_path,
@@ -124,3 +126,9 @@ class MediaService:
         )
 
         return media
+
+    @staticmethod
+    async def get_all_files(
+        db: AsyncSession
+    ):
+        return await MediaRepository.get_all(db)

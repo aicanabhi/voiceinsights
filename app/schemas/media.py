@@ -18,3 +18,6 @@ class MediaResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class MediaCreate(BaseModel):
+    agent_id: int

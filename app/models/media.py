@@ -31,6 +31,12 @@ class Media(Base):
         nullable=False
     )
 
+    agent_id = Column(
+        Integer,
+        ForeignKey("users.id",ondelete="CASCADE"),
+        nullable=True
+    )
+
     uploaded_by = Column(
         Integer,
         ForeignKey(
@@ -82,8 +88,17 @@ class Media(Base):
         "Organization"
     )
 
+    agent = relationship(
+        "User",
+        foreign_keys=[agent_id],
+        back_populates="assigned_media"
+    )
+
+
     uploader = relationship(
-        "User"
+        "User",
+        foreign_keys=[uploaded_by],
+        back_populates="uploaded_media"
     )
 
     transcripts = relationship(

@@ -73,3 +73,13 @@ class UserRepository:
     ):
         await db.delete(user)
         await db.commit()
+
+    @staticmethod
+    async def change_password(
+        db: AsyncSession,
+        user: User
+    ):
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        return user
