@@ -19,12 +19,12 @@ class AnalysisBase(BaseModel):
 
 
 class AnalysisCreate(AnalysisBase):
-    transcript_id: int
+    media_id: int
 
 
 class AnalysisResponse(AnalysisBase):
     id: int
-    transcript_id: int
+    media_id: int
     created_at: datetime
 
     class Config:

@@ -6,7 +6,6 @@ from app.models.organization import Organization
 from app.models.team import Team
 from app.models.user import User
 from app.models.media import Media
-from app.models.transcript import Transcript
 from app.models.analysis import Analysis
 
 
@@ -73,8 +72,14 @@ class DashboardRepository:
             )
         )
 
+        media_ids = select(Media.id).where(
+            Media.organization_id == organization_id
+        )
+
         completed_analysis = await db.scalar(
-            select(func.count(Analysis.id))
+            select(func.count(Analysis.id)).where(
+                Analysis.media_id.in_(media_ids)
+            )
         )
 
 
@@ -145,10 +150,6 @@ class DashboardRepository:
             Media.agent_id == agent_id
         )
 
-        transcript_ids = select(Transcript.id).where(
-            Transcript.media_id.in_(media_ids)
-        )
-
         uploaded_calls = await db.scalar(
             select(func.count(Media.id)).where(
                 Media.agent_id == agent_id
@@ -157,51 +158,51 @@ class DashboardRepository:
 
         completed_analysis = await db.scalar(
             select(func.count(Analysis.id)).where(
-                Analysis.transcript_id.in_(transcript_ids)
+                Analysis.media_id.in_(media_ids)
             )
         )
 
         avg_score = await db.scalar(
             select(func.avg(Analysis.overall_score)).where(
-                Analysis.transcript_id.in_(transcript_ids)
+                Analysis.media_id.in_(media_ids)
             )
         )
 
         avg_compliance = await db.scalar(
             select(func.avg(Analysis.compliance_score)).where(
-                Analysis.transcript_id.in_(transcript_ids)
+                Analysis.media_id.in_(media_ids)
             )
         )
 
         avg_professionalism = await db.scalar(
             select(func.avg(Analysis.professionalism_score)).where(
-                Analysis.transcript_id.in_(transcript_ids)
+                Analysis.media_id.in_(media_ids)
             )
         )
 
         avg_empathy = await db.scalar(
             select(func.avg(Analysis.empathy_score)).where(
-                Analysis.transcript_id.in_(transcript_ids)
+                Analysis.media_id.in_(media_ids)
             ) 
         )
 
         positive = await db.scalar(
             select(func.count(Analysis.id)).where(
-                Analysis.transcript_id.in_(transcript_ids),
+                Analysis.media_id.in_(media_ids),
                 Analysis.sentiment == "Positive"
             )
         ) 
 
         neutral = await db.scalar(
             select(func.count(Analysis.id)).where(
-                Analysis.transcript_id.in_(transcript_ids),
+                Analysis.media_id.in_(media_ids),
                 Analysis.sentiment == "Neutral"
             )
         )
 
         negative = await db.scalar(
             select(func.count(Analysis.id)).where(
-                Analysis.transcript_id.in_(transcript_ids),
+                Analysis.media_id.in_(media_ids),
                 Analysis.sentiment == "Negative"
             )
         )

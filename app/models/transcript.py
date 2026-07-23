@@ -57,13 +57,6 @@ class Transcript(Base):
         back_populates="transcripts"
     )
 
-    analysis = relationship(
-        "Analysis",
-        back_populates="transcript",
-        uselist=False,
-        cascade="all, delete-orphan"
-    )
-
     segments = relationship(
         "TranscriptSegment",
         back_populates="transcript",

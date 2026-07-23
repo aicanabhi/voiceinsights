@@ -1,9 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis import Analysis
+from app.repositories.organization_agent_repository import (
+    OrganizationAgentRepository
+)
 
 from app.repositories.analysis_repository import AnalysisRepository
-from app.repositories.transcript_repository import TranscriptRepository
+from app.repositories.media_repository import MediaRepository
+from app.repositories.mongo_repository import MongoRepository
 
 from app.services.groq_service import GroqService
 
@@ -14,26 +18,44 @@ groq_service = GroqService()
 class AnalysisService:
 
     @staticmethod
-    async def analyze_transcript(
+    async def analyze_media(
         db: AsyncSession,
-        transcript_id: int
+        media_id: int
     ):
 
-        transcript = await TranscriptRepository.get_by_id(
+        media = await MediaRepository.get_by_id(
             db,
-            transcript_id
+            media_id
         )
 
-        if transcript is None:
+        if media is None:
+            raise Exception("Media not found.")
+
+        transcript_doc = await MongoRepository.get_transcript_by_media_id(
+            media.id
+        )
+
+        if transcript_doc is None:
             raise Exception("Transcript not found.")
 
-        # AI Analysis using Groq
+        agent = await OrganizationAgentRepository.get_by_organization(
+            media.organization_id
+        )
+
+        if agent is None:
+            raise Exception(
+                f"No AI Agent found for organization {media.organization_id}"
+        )
+        print(agent)
+
         ai_result = groq_service.analyze_transcript(
-            transcript.transcript
+            transcript_doc["transcript"],
+            system_prompt=agent["system_prompt"],
+            rules=agent["rules"]
         )
 
         analysis = Analysis(
-            transcript_id=transcript.id,
+            media_id=media.id,
 
             summary=ai_result["summary"],
             sentiment=ai_result["sentiment"],
@@ -51,10 +73,33 @@ class AnalysisService:
             ai_feedback=ai_result["ai_feedback"]
         )
 
-        return await AnalysisRepository.create(
+        saved_analysis = await AnalysisRepository.create(
             db,
             analysis
         )
+
+        print("Analysis saved in PostgreSQL")
+
+        await MongoRepository.save_analysis(
+            media_id=media.id,
+            analysis={
+                "summary": ai_result["summary"],
+                "sentiment": ai_result["sentiment"],
+                "compliance_score": ai_result["compliance_score"],
+                "professionalism_score": ai_result["professionalism_score"],
+                "empathy_score": ai_result["empathy_score"],
+                "overall_score": ai_result["overall_score"],
+                "greeting_followed": ai_result["greeting_followed"],
+                "closing_followed": ai_result["closing_followed"],
+                "violations": ai_result["violations"],
+                "recommendations": ai_result["recommendations"],
+                "ai_feedback": ai_result["ai_feedback"]
+            }
+        )
+
+        print("Mongo update completed")
+
+        return saved_analysis
 
     @staticmethod
     async def get_analysis(
@@ -70,6 +115,4 @@ class AnalysisService:
     async def get_all_analysis(
         db: AsyncSession
     ):
-        return await AnalysisRepository.get_all(
-            db
-        )
+        return await AnalysisRepository.get_all(db)

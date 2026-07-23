@@ -30,13 +30,13 @@ class AnalysisRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def get_by_transcript(
+    async def get_by_media(
         db: AsyncSession,
-        transcript_id: int
+        media_id: int
     ):
         result = await db.execute(
             select(Analysis).where(
-                Analysis.transcript_id == transcript_id
+                Analysis.media_id == media_id
             )
         )
 

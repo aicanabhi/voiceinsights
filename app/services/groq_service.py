@@ -14,11 +14,21 @@ class GroqService:
 
     def analyze_transcript(
         self,
-        transcript: str
+        transcript: str,
+        system_prompt: str,
+        rules: dict
     ):
 
         prompt = f"""
-You are an expert AI Call Quality Analyst.
+You are an AI Call Quality Analyst.
+
+Follow these instructions carefully.
+
+SYSTEM PROMPT:
+{system_prompt}
+
+RULES:
+{json.dumps(rules, indent=2)}
 
 Analyze the following customer support call transcript.
 
@@ -55,6 +65,10 @@ Transcript:
             model="llama-3.3-70b-versatile",
             messages=[
                 {
+                    "role": "system",
+                    "content": "You are an expert AI Call Quality Analyst."
+                },
+                {
                     "role": "user",
                     "content": prompt
                 }
@@ -64,14 +78,10 @@ Transcript:
 
         content = response.choices[0].message.content.strip()
 
-        # Remove markdown code fences if present
         if content.startswith("```"):
             lines = content.splitlines()
-
-            # Remove first line (``` or ```json)
             lines = lines[1:]
 
-            # Remove last line if it is ```
             if lines and lines[-1].strip() == "```":
                 lines = lines[:-1]
 

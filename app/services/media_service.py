@@ -5,23 +5,28 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.media import Media
-from app.models.transcript import Transcript
 from app.models.analysis import Analysis
 
 from app.repositories.media_repository import MediaRepository
-from app.repositories.transcript_repository import TranscriptRepository
 from app.repositories.analysis_repository import AnalysisRepository
 
 from app.services.deepgram_service import DeepgramService
+from app.services.elevenlabs_service import ElevenLabsService
+from app.services.cartesia_service import CartesiaService
 from app.services.groq_service import GroqService
 
-from app.models.transcript_segment import TranscriptSegment
-from app.repositories.transcript_segment_repository import TranscriptSegmentRepository
+from app.models.enums import TranscriptProvider
+from app.repositories.mongo_repository import MongoRepository
+from app.repositories.organization_agent_repository import (
+    OrganizationAgentRepository
+)
 
 
 UPLOAD_DIR = "uploads"
 
 deepgram_service = DeepgramService()
+elevenlabs_service = ElevenLabsService()
+cartesia_service = CartesiaService()
 groq_service = GroqService()
 
 
@@ -33,6 +38,7 @@ class MediaService:
         organization_id: int,
         uploaded_by: int,
         agent_id: int,
+        provider: TranscriptProvider,
         file: UploadFile
     ):
 
@@ -49,6 +55,8 @@ class MediaService:
         with open(file_path, "wb") as buffer:
             buffer.write(await file.read())
 
+
+
         media = Media(
             organization_id=organization_id,
             uploaded_by=uploaded_by,
@@ -63,50 +71,62 @@ class MediaService:
 
         media = await MediaRepository.create(db, media)
 
-        # -----------------------------
-        # Deepgram Transcription
-        # -----------------------------
-        deepgram_result = deepgram_service.transcribe(
-            media.file_path
-        )
+        if provider == TranscriptProvider.DEEPGRAM:
 
-        transcript = Transcript(
-            media_id=media.id,
-            transcript=deepgram_result["transcript"],
-            language=deepgram_result["language"],
-            status="COMPLETED"
-        )
-
-        transcript = await TranscriptRepository.create(
-            db,
-            transcript
-        )
-
-        # -----------------------------
-        # Save Transcript Segments
-        # -----------------------------
-        for seg in deepgram_result["speaker_segments"]:
-            transcript_segment = TranscriptSegment(
-                transcript_id=transcript.id,
-                speaker=seg["speaker"],
-                start_time=seg["start"],
-                end_time=seg["end"],
-                text=seg["text"],
-                confidence=seg["confidence"]
+            transcript_result = deepgram_service.transcribe(
+                media.file_path
             )
 
-            db.add(transcript_segment)
+        elif provider == TranscriptProvider.ELEVENLABS:
+            transcript_result = elevenlabs_service.transcribe(
+                media.file_path
+            )
+
+
+        elif provider == TranscriptProvider.CARTESIA:
+                
+            transcript_result = cartesia_service.transcribe(
+                media.file_path
+            ) 
+              
+
+        else:
+            raise Exception("Invalid Provider")
+
+        await MongoRepository.save_transcript(
+            media_id=media.id,
+            organization_id=organization_id,
+            agent_id=agent_id,
+            provider=provider.value,
+            transcript=transcript_result["transcript"],
+            language=transcript_result["language"],
+            speaker_segments=transcript_result["speaker_segments"]
+        )
+        
+
+
+       
 
             
-        # -----------------------------
-        # AI Analysis
-        # -----------------------------
-        ai_result = groq_service.analyze_transcript(
-            transcript.transcript
+        agent = await OrganizationAgentRepository.get_by_organization(
+            organization_id
         )
 
+        if agent is None:
+            raise Exception(
+                "Organization AI Agent not found"
+            )
+
+
+        ai_result = groq_service.analyze_transcript(
+            transcript=transcript_result["transcript"],
+            system_prompt=agent["system_prompt"],
+            rules=agent["rules"]
+        )
+        
+
         analysis = Analysis(
-            transcript_id=transcript.id,
+            media_id=media.id,
             summary=ai_result["summary"],
             sentiment=ai_result["sentiment"],
             compliance_score=ai_result["compliance_score"],
@@ -124,6 +144,26 @@ class MediaService:
             db,
             analysis
         )
+
+        await MongoRepository.save_analysis(
+            media_id=media.id,
+            analysis={
+                "summary": ai_result["summary"],
+                "sentiment": ai_result["sentiment"],
+                "compliance_score": ai_result["compliance_score"],
+                "professionalism_score": ai_result["professionalism_score"],
+                "empathy_score": ai_result["empathy_score"],
+                "overall_score": ai_result["overall_score"],
+                "greeting_followed": ai_result["greeting_followed"],
+                "closing_followed": ai_result["closing_followed"],
+                "violations": ai_result["violations"],
+                "recommendations": ai_result["recommendations"],
+                "ai_feedback": ai_result["ai_feedback"]
+            }
+        )
+
+        print("Analysis saved in MongoDB")
+
 
         return media
 

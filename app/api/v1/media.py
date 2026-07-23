@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.schemas.media import MediaResponse
 from app.services.media_service import MediaService
+from app.models.enums import TranscriptProvider
 
 router = APIRouter(
     prefix="/media",
@@ -25,6 +26,7 @@ async def upload_media(
     organization_id: int,
     uploaded_by: int,
     agent_id: int,
+    provider: TranscriptProvider,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db)
 ):
@@ -33,6 +35,7 @@ async def upload_media(
         organization_id,
         uploaded_by,
         agent_id,
+        provider,
         file
     )
 

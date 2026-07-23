@@ -106,3 +106,10 @@ class Media(Base):
         back_populates="media",
         cascade="all, delete-orphan"
     )
+
+    analysis = relationship(
+        "Analysis",
+        back_populates="media",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )

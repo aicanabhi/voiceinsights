@@ -12,17 +12,17 @@ router = APIRouter(
 
 
 @router.post(
-    "/generate/{transcript_id}",
+    "/generate/{media_id}",
     response_model=AnalysisResponse
 )
 async def generate_analysis(
-    transcript_id: int,
+    media_id: int,
     db: AsyncSession = Depends(get_db)
 ):
     try:
-        return await AnalysisService.analyze_transcript(
+        return await AnalysisService.analyze_media(
             db,
-            transcript_id
+            media_id
         )
     except Exception as e:
         raise HTTPException(

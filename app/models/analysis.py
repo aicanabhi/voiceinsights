@@ -23,10 +23,10 @@ class Analysis(Base):
         index=True
     )
 
-    transcript_id = Column(
+    media_id = Column(
         Integer,
         ForeignKey(
-            "transcripts.id",
+            "media.id",
             ondelete="CASCADE"
         ),
         nullable=False
@@ -76,7 +76,7 @@ class Analysis(Base):
         server_default=func.now()
     )
 
-    transcript = relationship(
-        "Transcript",
+    media = relationship(
+        "Media",
         back_populates="analysis"
     )
