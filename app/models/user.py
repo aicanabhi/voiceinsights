@@ -1,83 +1,101 @@
-import uuid
-from datetime import datetime
-from enum import Enum
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Enum
+)
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from app.db.base import Base
-
-
-class UserRole(str, Enum):
-    SUPER_ADMIN = "SUPER_ADMIN"
-    ORG_ADMIN = "ORG_ADMIN"
-    TEAM_LEAD = "TEAM_LEAD"
-    AGENT = "AGENT"
+from app.models.enums import UserRole
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id = Column(
+        Integer,
         primary_key=True,
-        default=uuid.uuid4
+        index=True
     )
 
-    full_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    organization_id = Column(
+        Integer,
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=True
+    )
 
-    email: Mapped[str] = mapped_column(
-        String(255),
+    team_id = Column(
+        Integer,
+        ForeignKey("teams.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
+    full_name = Column(
+        String(150),
+        nullable=False
+    )
+
+    email = Column(
+        String(200),
         unique=True,
-        index=True,
         nullable=False
     )
 
-    password_hash: Mapped[str] = mapped_column(
+    phone = Column(
+        String(20),
+        nullable=True
+    )
+
+    password_hash = Column(
         String(255),
         nullable=False
     )
 
-    phone: Mapped[str | None] = mapped_column(
-        String(20),
-        nullable=True
+    role = Column(
+        Enum(UserRole),
+        nullable=False
     )
 
-    role: Mapped[str] = mapped_column(
-        String(20),
-        default=UserRole.AGENT.value
-    )
-
-    organization_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("organizations.id"),
-        nullable=True
-    )
-
-    team_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("teams.id"),
-        nullable=True
-    )
-
-    is_active: Mapped[bool] = mapped_column(
+    is_active = Column(
         Boolean,
         default=True
     )
 
-    is_verified: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now()
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
     )
 
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
+    organization = relationship(
+        "Organization",
+        back_populates="users"
+    )
+
+    team = relationship(
+        "Team",
+        back_populates="users"
+    )
+
+    uploaded_media = relationship(
+        "Media",
+        foreign_keys="Media.uploaded_by",
+        back_populates="uploader"
+    )
+
+    assigned_media = relationship(
+        "Media",
+        foreign_keys="Media.agent_id",
+        back_populates="agent"
     )
