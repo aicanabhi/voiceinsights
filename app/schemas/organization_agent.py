@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -14,3 +15,11 @@ class OrganizationAgentCreate(BaseModel):
     description: str
     system_prompt: str
     rules: AgentRules
+
+
+class OrganizationAgentUpdate(BaseModel):
+    agent_name: Optional[str] = None
+    description: Optional[str] = None
+    system_prompt: Optional[str] = None
+    rules: Optional[AgentRules] = None
+    status: Optional[str] = None

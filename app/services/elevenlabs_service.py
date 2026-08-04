@@ -10,7 +10,7 @@ class ElevenLabsService:
     def __init__(self):
         self.api_key = settings.ELEVENLABS_API_KEY
 
-    def transcribe(self, file_path: str):
+    def transcribe(self, file_path: str, model: str):
 
         headers = {
             "xi-api-key": self.api_key
@@ -23,7 +23,7 @@ class ElevenLabsService:
             }
 
             data = {
-                "model_id": "scribe_v2",
+                "model_id": model,
                 "diarize": "true"
             }
 

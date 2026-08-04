@@ -13,7 +13,7 @@ class DashboardService:
 
     @staticmethod
     async def get_organization_dashboard(
-        db,
+        db: AsyncSession,
         organization_id: int
     ):
         return await DashboardRepository.get_organization_dashboard(
@@ -39,4 +39,4 @@ class DashboardService:
         return await DashboardRepository.get_agent_dashboard(
             db,
             agent_id
-        )
+        ) 

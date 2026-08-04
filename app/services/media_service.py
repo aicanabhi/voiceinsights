@@ -1,6 +1,9 @@
 import os
 import uuid
 
+from fastapi import HTTPException
+from app.constants.provider_models import PROVIDER_MODELS
+
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,8 +42,20 @@ class MediaService:
         uploaded_by: int,
         agent_id: int,
         provider: TranscriptProvider,
+        model: str,
         file: UploadFile
     ):
+        provider_name = provider.value
+        if provider_name not in PROVIDER_MODELS:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid provider"
+            )
+        if model not in PROVIDER_MODELS[provider_name]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{model} is not a valid model for {provider_name}"
+            )
 
         os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -74,19 +89,22 @@ class MediaService:
         if provider == TranscriptProvider.DEEPGRAM:
 
             transcript_result = deepgram_service.transcribe(
-                media.file_path
+                media.file_path,
+                model
             )
 
         elif provider == TranscriptProvider.ELEVENLABS:
             transcript_result = elevenlabs_service.transcribe(
-                media.file_path
-            )
+                media.file_path,
+                model
+ )
 
 
         elif provider == TranscriptProvider.CARTESIA:
                 
             transcript_result = cartesia_service.transcribe(
-                media.file_path
+                media.file_path,
+                model
             ) 
               
 

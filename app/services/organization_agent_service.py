@@ -39,3 +39,36 @@ class OrganizationAgentService:
         return await OrganizationAgentRepository.get_by_organization(
             organization_id
         )
+
+    @staticmethod
+    async def get_all_agents():
+        return await OrganizationAgentRepository.get_all()
+
+    @staticmethod
+    async def update_agent(
+        agent_id: str,
+        data
+    ):
+
+        update_data = data.model_dump(
+            exclude_unset=True
+        )
+
+        if "rules" in update_data:
+            update_data["rules"] = (
+                update_data["rules"].model_dump()
+            )
+
+        return await OrganizationAgentRepository.update(
+            agent_id,
+            update_data
+        )
+
+    @staticmethod
+    async def delete_agent(
+        agent_id: str
+    ):
+
+        return await OrganizationAgentRepository.delete(
+            agent_id
+        )

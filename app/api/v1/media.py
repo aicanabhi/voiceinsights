@@ -27,6 +27,7 @@ async def upload_media(
     uploaded_by: int,
     agent_id: int,
     provider: TranscriptProvider,
+    model: str,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db)
 ):
@@ -36,6 +37,7 @@ async def upload_media(
         uploaded_by,
         agent_id,
         provider,
+        model,
         file
     )
 

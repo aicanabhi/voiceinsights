@@ -9,14 +9,14 @@ class DeepgramService:
             api_key=settings.DEEPGRAM_API_KEY
         )
 
-    def transcribe(self, file_path: str):
+    def transcribe(self, file_path: str, model: str):
 
         with open(file_path, "rb") as audio:
             audio_data = audio.read()
 
         response = self.client.listen.v1.media.transcribe_file(
             request=audio_data,
-            model="nova-3",
+            model=model,
             smart_format=True,
             utterances=True,
             punctuate=True,

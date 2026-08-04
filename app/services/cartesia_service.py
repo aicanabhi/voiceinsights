@@ -7,7 +7,8 @@ class CartesiaService:
 
     def transcribe(
         self,
-        file_path: str
+        file_path: str,
+        model:str
     ):
 
         url = "https://api.cartesia.ai/stt"
@@ -22,7 +23,7 @@ class CartesiaService:
         }
 
         data = {
-            "model": "ink-whisper",
+            "model": model,
             "language": "en"
         }
 
