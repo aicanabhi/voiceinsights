@@ -1,7 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.transcript import Transcript
+
 from app.repositories.transcript_repository import TranscriptRepository
+from app.services.transcript_segment_service import TranscriptSegmentService
 
 
 class TranscriptService:
@@ -35,16 +37,29 @@ class TranscriptService:
         media_id: int,
         transcript_text: str,
         language: str = "en",
-        status: str = "COMPLETED"
+        status: str = "COMPLETED",
+        audio_base64: str = None,
+        segments: list = None
     ):
         transcript = Transcript(
             media_id=media_id,
             transcript=transcript_text,
             language=language,
-            status=status
+            status=status,
+            audio_base64=audio_base64
         )
 
-        return await TranscriptRepository.create(
+        transcript_obj = await TranscriptRepository.create(
             db,
             transcript
         )
+
+        if segments:
+            await TranscriptSegmentService.create_segments(
+                db=db,
+                transcript_id=transcript_obj.id,
+                segments=segments
+           )
+
+
+        return transcript_obj

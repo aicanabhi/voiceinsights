@@ -1,14 +1,19 @@
 import os
 import uuid
-
+import base64
+from app.models import transcript
+from app.services.transcript_segment_service import TranscriptSegmentService
 from fastapi import HTTPException
 from app.constants.provider_models import PROVIDER_MODELS
 
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.transcript import Transcript
+from app.repositories.transcript_repository import TranscriptRepository
 
 from app.models.media import Media
 from app.models.analysis import Analysis
+from app.services.transcript_service import TranscriptService
 
 from app.repositories.media_repository import MediaRepository
 from app.repositories.analysis_repository import AnalysisRepository
@@ -18,19 +23,16 @@ from app.services.elevenlabs_service import ElevenLabsService
 from app.services.cartesia_service import CartesiaService
 from app.services.groq_service import GroqService
 
-from app.models.enums import TranscriptProvider
-from app.repositories.mongo_repository import MongoRepository
+from app.models.enums import TranscriptProvider,Language
 from app.repositories.organization_agent_repository import (
     OrganizationAgentRepository
 )
+from app.core.config import settings
 
 
 UPLOAD_DIR = "uploads"
-
-deepgram_service = DeepgramService()
-elevenlabs_service = ElevenLabsService()
-cartesia_service = CartesiaService()
 groq_service = GroqService()
+
 
 
 class MediaService:
@@ -40,9 +42,10 @@ class MediaService:
         db: AsyncSession,
         organization_id: int,
         uploaded_by: int,
-        agent_id: int,
+        calling_agent_id: int,
         provider: TranscriptProvider,
         model: str,
+        language: Language,
         file: UploadFile
     ):
         provider_name = provider.value
@@ -75,71 +78,114 @@ class MediaService:
         media = Media(
             organization_id=organization_id,
             uploaded_by=uploaded_by,
-            agent_id=agent_id,
+            calling_agent_id=calling_agent_id,
             original_filename=file.filename,
             stored_filename=stored_filename,
             file_path=file_path,
             file_size=os.path.getsize(file_path),
             content_type=file.content_type,
-            upload_status="UPLOADED"
+            upload_status="UPLOADED",
+            provider=provider.value,
+            model=model,
+            language=language.value
         )
 
         media = await MediaRepository.create(db, media)
 
-        if provider == TranscriptProvider.DEEPGRAM:
+        with open(media.file_path, "rb") as audio_file:
+            audio_base64 = base64.b64encode(
+            audio_file.read()
+            ).decode("utf-8")
 
-            transcript_result = deepgram_service.transcribe(
-                media.file_path,
-                model
-            )
-
-        elif provider == TranscriptProvider.ELEVENLABS:
-            transcript_result = elevenlabs_service.transcribe(
-                media.file_path,
-                model
- )
-
-
-        elif provider == TranscriptProvider.CARTESIA:
-                
-            transcript_result = cartesia_service.transcribe(
-                media.file_path,
-                model
-            ) 
-              
-
-        else:
-            raise Exception("Invalid Provider")
-
-        await MongoRepository.save_transcript(
-            media_id=media.id,
+        agent = await OrganizationAgentRepository.get_by_organization_provider(
             organization_id=organization_id,
-            agent_id=agent_id,
-            provider=provider.value,
-            transcript=transcript_result["transcript"],
-            language=transcript_result["language"],
-            speaker_segments=transcript_result["speaker_segments"]
+            provider=provider.value
         )
-        
-
-
-       
-
-            
-        agent = await OrganizationAgentRepository.get_by_organization(
-            organization_id
-        )
-
         if agent is None:
             raise Exception(
                 "Organization AI Agent not found"
             )
 
+        if not agent.get("security_key"):
+            raise Exception(
+                f"No {provider.value} agent configured for this organization."
+            )
+
+
+        if provider == TranscriptProvider.DEEPGRAM:
+
+            api_key = (
+                agent.get("security_key")
+                or settings.DEEPGRAM_API_KEY
+            )
+
+            print("KEY:", settings.DEEPGRAM_API_KEY)
+            deepgram_service = DeepgramService(api_key)
+
+            transcript_result = deepgram_service.transcribe(
+                media.file_path,
+                model,
+                language.value
+            )
+
+
+        elif provider == TranscriptProvider.ELEVENLABS:
+
+            api_key = (
+                agent.get("security_key")
+                or settings.ELEVENLABS_API_KEY
+            )
+
+            elevenlabs_service = ElevenLabsService(
+                api_key
+            )
+
+            transcript_result = elevenlabs_service.transcribe(
+                media.file_path,
+                model
+            )
+
+
+        elif provider == TranscriptProvider.CARTESIA:
+
+            api_key = (
+                agent.get("security_key")
+                or settings.CARTESIA_API_KEY
+            )
+
+            cartesia_service = CartesiaService(
+                api_key
+            )
+
+            transcript_result = cartesia_service.transcribe(
+                media.file_path,
+                model
+            )
+
+
+        else:
+            raise Exception("Invalid Provider")
+
+        transcript_obj=await TranscriptService.create_transcript(
+            db=db,
+            media_id=media.id,
+            transcript_text=transcript_result["transcript"],
+            language=transcript_result["language"],
+            status="COMPLETED",
+            audio_base64=audio_base64,
+            segments=transcript_result["speaker_segments"]
+        )
+        await TranscriptSegmentService.create_segments(
+            db,
+            transcript_obj.id,
+            transcript_result["speaker_segments"]
+        )
+
 
         ai_result = groq_service.analyze_transcript(
             transcript=transcript_result["transcript"],
             system_prompt=agent["system_prompt"],
-            rules=agent["rules"]
+            
         )
         
 
@@ -161,23 +207,6 @@ class MediaService:
         await AnalysisRepository.create(
             db,
             analysis
-        )
-
-        await MongoRepository.save_analysis(
-            media_id=media.id,
-            analysis={
-                "summary": ai_result["summary"],
-                "sentiment": ai_result["sentiment"],
-                "compliance_score": ai_result["compliance_score"],
-                "professionalism_score": ai_result["professionalism_score"],
-                "empathy_score": ai_result["empathy_score"],
-                "overall_score": ai_result["overall_score"],
-                "greeting_followed": ai_result["greeting_followed"],
-                "closing_followed": ai_result["closing_followed"],
-                "violations": ai_result["violations"],
-                "recommendations": ai_result["recommendations"],
-                "ai_feedback": ai_result["ai_feedback"]
-            }
         )
 
         print("Analysis saved in MongoDB")

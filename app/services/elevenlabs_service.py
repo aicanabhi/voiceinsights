@@ -1,5 +1,5 @@
 import requests
-
+import base64
 from app.core.config import settings
 
 
@@ -7,8 +7,8 @@ class ElevenLabsService:
 
     BASE_URL = "https://api.elevenlabs.io/v1/speech-to-text"
 
-    def __init__(self):
-        self.api_key = settings.ELEVENLABS_API_KEY
+    def __init__(self,api_key: str):
+        self.api_key = api_key
 
     def transcribe(self, file_path: str, model: str):
 
@@ -17,6 +17,11 @@ class ElevenLabsService:
         }
 
         with open(file_path, "rb") as audio_file:
+
+            audio_bytes = audio_file.read()
+            audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
+
+            audio_file.seek(0)
 
             files = {
                 "file": audio_file
@@ -55,5 +60,6 @@ class ElevenLabsService:
         return {
             "transcript": result.get("text"),
             "language": result.get("language_code"),
-            "speaker_segments": speaker_segments
+            "speaker_segments": speaker_segments,
+            "audio_base64": audio_base64
         }

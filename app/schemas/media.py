@@ -12,6 +12,9 @@ class MediaResponse(BaseModel):
     file_size: int | None = None
     content_type: str | None = None
     upload_status: str
+    provider: str
+    model:str
+    language:str
     is_deleted: bool
     created_at: datetime
 
@@ -20,4 +23,4 @@ class MediaResponse(BaseModel):
     }
 
 class MediaCreate(BaseModel):
-    agent_id: int
+    calling_agent_id: int

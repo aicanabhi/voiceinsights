@@ -5,6 +5,9 @@ from app.core.config import settings
 
 class CartesiaService:
 
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+
     def transcribe(
         self,
         file_path: str,
@@ -14,7 +17,7 @@ class CartesiaService:
         url = "https://api.cartesia.ai/stt"
 
         headers = {
-            "Authorization": f"Bearer {settings.CARTESIA_API_KEY}",
+            "Authorization": f"Bearer {self.api_key}",
             "Cartesia-Version": "2026-03-01"
         }
 

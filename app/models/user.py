@@ -96,6 +96,6 @@ class User(Base):
 
     assigned_media = relationship(
         "Media",
-        foreign_keys="Media.agent_id",
-        back_populates="agent"
+        foreign_keys="Media.calling_agent_id",
+        back_populates="calling_agent"
     )

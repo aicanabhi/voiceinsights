@@ -31,6 +31,31 @@ class OrganizationAgentRepository:
         return agent
 
     @staticmethod
+    async def get_by_organization_provider(
+        organization_id: int,
+        provider: str
+   ):
+
+        print("========== Mongo Search ==========")
+        print("Organization:", organization_id)
+        print("Provider:", provider)
+
+        agent = await organization_agents_collection.find_one(
+            {
+                "organization_id": organization_id,
+                "provider": provider
+            }
+        )
+
+        print("Agent:", agent)
+        print("==================================")
+
+        if agent:
+            agent["_id"] = str(agent["_id"])
+
+        return agent
+
+    @staticmethod
     async def get_all():
 
         cursor = organization_agents_collection.find()
@@ -44,13 +69,13 @@ class OrganizationAgentRepository:
 
     @staticmethod
     async def update(
-        agent_id: str,
+        organization_id: int,
         data: dict
     ):
 
         await organization_agents_collection.update_one(
             {
-                "_id": ObjectId(agent_id)
+                "organization_id": organization_id
             },
             {
                 "$set": data
@@ -59,7 +84,7 @@ class OrganizationAgentRepository:
 
         updated_agent = await organization_agents_collection.find_one(
             {
-                "_id": ObjectId(agent_id)
+                "organization_id": organization_id
             }
         )
 
@@ -70,12 +95,12 @@ class OrganizationAgentRepository:
 
     @staticmethod
     async def delete(
-        agent_id: str
+        organization_id: int
     ):
 
         await organization_agents_collection.delete_one(
             {
-                "_id": ObjectId(agent_id)
+                "organization_id": organization_id
             }
         )
 

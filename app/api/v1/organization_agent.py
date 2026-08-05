@@ -8,6 +8,9 @@ from app.schemas.organization_agent import (
     OrganizationAgentCreate,
     OrganizationAgentUpdate
 )
+from app.services.organization_agent_service import (
+    OrganizationAgentService,
+)
 
 router = APIRouter(
     prefix="/organization-agents",
@@ -44,22 +47,22 @@ async def get_all_organization_agents():
 
     return await OrganizationAgentService.get_all_agents()
 
-@router.put("/{agent_id}")
+@router.put("/{organization_id}")
 async def update_organization_agent(
-    agent_id: str,
+    organization_id: int,
     data: OrganizationAgentUpdate
 ):
 
     return await OrganizationAgentService.update_agent(
-        agent_id,
+        organization_id,
         data
     )
 
-@router.delete("/{agent_id}")
+@router.delete("/{organization_id}")
 async def delete_organization_agent(
-    agent_id: str
+    organization_id: int
 ):
 
     return await OrganizationAgentService.delete_agent(
-        agent_id
+        organization_id
     )

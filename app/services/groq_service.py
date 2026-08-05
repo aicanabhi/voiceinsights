@@ -16,7 +16,7 @@ class GroqService:
         self,
         transcript: str,
         system_prompt: str,
-        rules: dict
+        
     ):
 
         prompt = f"""
@@ -26,9 +26,6 @@ Follow these instructions carefully.
 
 SYSTEM PROMPT:
 {system_prompt}
-
-RULES:
-{json.dumps(rules, indent=2)}
 
 Analyze the following customer support call transcript.
 

@@ -15,11 +15,15 @@ class OrganizationAgentService:
 
             "agent_name": data.agent_name,
 
-            "description": data.description,
+            "provider": data.provider.value,
+
+            "model": data.model,
+
+            "language": data.language.value,
 
             "system_prompt": data.system_prompt,
 
-            "rules": data.rules.model_dump(),
+            "security_key": data.security_key,
 
             "status": "ACTIVE"
         }
@@ -46,7 +50,7 @@ class OrganizationAgentService:
 
     @staticmethod
     async def update_agent(
-        agent_id: str,
+        organization_id: int,
         data
     ):
 
@@ -54,21 +58,22 @@ class OrganizationAgentService:
             exclude_unset=True
         )
 
-        if "rules" in update_data:
-            update_data["rules"] = (
-                update_data["rules"].model_dump()
-            )
+        if "provider" in update_data:
+            update_data["provider"] = update_data["provider"].value
+
+        if "language" in update_data:
+            update_data["language"] = update_data["language"].value
 
         return await OrganizationAgentRepository.update(
-            agent_id,
+            organization_id,
             update_data
         )
 
     @staticmethod
     async def delete_agent(
-        agent_id: str
+        organization_id: int
     ):
 
         return await OrganizationAgentRepository.delete(
-            agent_id
+            organization_id
         )

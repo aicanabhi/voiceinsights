@@ -211,7 +211,7 @@ class DashboardRepository:
         )
 
         media_ids = select(Media.id).where(
-            Media.agent_id.in_(
+            Media.calling_agent_id.in_(
                 select(User.id).where(
                     User.team_id == team_id
                 )
@@ -302,12 +302,12 @@ class DashboardRepository:
             )
          
         media_ids = select(Media.id).where(
-            Media.agent_id == agent_id
+            Media.calling_agent_id == agent_id
         )
 
         uploaded_calls = await db.scalar(
             select(func.count(Media.id)).where(
-                Media.agent_id == agent_id
+                Media.calling_agent_id == agent_id
             )
         )
 
