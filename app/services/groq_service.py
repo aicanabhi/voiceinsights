@@ -37,11 +37,14 @@ Do not use ```json or ```.
 
 Do not add any explanation.
 
+"sentiment" MUST be exactly one of: "Positive", "Neutral", "Negative".
+Use that exact spelling and capitalisation, with no extra words.
+
 JSON format:
 
 {{
     "summary":"",
-    "sentiment":"",
+    "sentiment":"Positive | Neutral | Negative",
     "compliance_score":0,
     "professionalism_score":0,
     "empathy_score":0,
