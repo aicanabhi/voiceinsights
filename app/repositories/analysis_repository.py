@@ -1,7 +1,10 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.access import apply_media_scope
 from app.models.analysis import Analysis
+from app.models.media import Media
+from app.models.user import User
 
 
 class AnalysisRepository:
@@ -48,6 +51,38 @@ class AnalysisRepository:
     ):
         result = await db.execute(
             select(Analysis)
+        )
+
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_by_id_for_user(
+        db: AsyncSession,
+        analysis_id: int,
+        current_user: User
+    ):
+        result = await db.execute(
+            apply_media_scope(
+                select(Analysis)
+                .join(Media, Analysis.media_id == Media.id)
+                .where(Analysis.id == analysis_id),
+                current_user
+            )
+        )
+
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_all_for_user(
+        db: AsyncSession,
+        current_user: User
+    ):
+        result = await db.execute(
+            apply_media_scope(
+                select(Analysis)
+                .join(Media, Analysis.media_id == Media.id),
+                current_user
+            )
         )
 
         return result.scalars().all()

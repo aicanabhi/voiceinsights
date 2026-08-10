@@ -11,10 +11,7 @@ from app.schemas.organization import (
 
 from app.services.organization_service import OrganizationService
 
-from app.core.dependencies import (
-    get_current_user,
-    require_roles,
-)
+from app.core.dependencies import require_roles
 
 from app.models.user import User
 from app.models.enums import UserRole

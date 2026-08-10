@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.core.dependencies import get_current_user
 from app.schemas.provider import ProviderModels
 from app.services.provider_service import ProviderService
 
@@ -11,7 +12,8 @@ router = APIRouter(
 
 @router.get(
     "/",
-    response_model=list[ProviderModels]
+    response_model=list[ProviderModels],
+    dependencies=[Depends(get_current_user)]
 )
 async def get_providers():
 

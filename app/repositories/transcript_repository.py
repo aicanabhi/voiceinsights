@@ -1,7 +1,10 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.access import apply_media_scope
+from app.models.media import Media
 from app.models.transcript import Transcript
+from app.models.user import User
 
 
 class TranscriptRepository:
@@ -48,6 +51,21 @@ class TranscriptRepository:
     ):
         result = await db.execute(
             select(Transcript)
+        )
+
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_all_for_user(
+        db: AsyncSession,
+        current_user: User
+    ):
+        result = await db.execute(
+            apply_media_scope(
+                select(Transcript)
+                .join(Media, Transcript.media_id == Media.id),
+                current_user
+            )
         )
 
         return result.scalars().all()

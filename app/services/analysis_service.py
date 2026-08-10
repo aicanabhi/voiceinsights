@@ -1,3 +1,5 @@
+import asyncio
+
 from app.models import transcript
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,12 +22,15 @@ class AnalysisService:
     @staticmethod
     async def analyze_media(
         db: AsyncSession,
-        media_id: int
+        media_id: int,
+        current_user
     ):
 
-        media = await MediaRepository.get_by_id(
+        # Scoped fetch: media the caller may not see reads as "not found".
+        media = await MediaRepository.get_by_id_for_user(
             db,
-            media_id
+            media_id,
+            current_user
         )
 
         if media is None:
@@ -39,20 +44,25 @@ class AnalysisService:
         if transcript is None:
             raise Exception("Transcript not found.")
 
-        agent = await OrganizationAgentRepository.get_by_organization(
-            media.organization_id
+        # Use the agent the transcript was actually produced with, so the
+        # analysis prompt matches the provider stored on the media row.
+        agent = await OrganizationAgentRepository.get_by_organization_provider(
+            media.organization_id,
+            media.provider
         )
 
         if agent is None:
             raise Exception(
-                f"No AI Agent found for organization {media.organization_id}"
-        )
-        print(agent)
+                f"No {media.provider} agent found for organization "
+                f"{media.organization_id}"
+            )
 
-        ai_result = groq_service.analyze_transcript(
-            transcript=transcript.transcript,
-            system_prompt=agent["system_prompt"]
-   )
+        # Blocking LLM call -- keep it off the event loop.
+        ai_result = await asyncio.to_thread(
+            groq_service.analyze_transcript,
+            transcript.transcript,
+            agent["system_prompt"]
+        )
         analysis = Analysis(
             media_id=media.id,
 
@@ -77,22 +87,27 @@ class AnalysisService:
             analysis
         )
 
-        print("Analysis saved in PostgreSQL")
 
         return saved_analysis
 
     @staticmethod
     async def get_analysis(
         db: AsyncSession,
-        analysis_id: int
+        analysis_id: int,
+        current_user
     ):
-        return await AnalysisRepository.get_by_id(
+        return await AnalysisRepository.get_by_id_for_user(
             db,
-            analysis_id
+            analysis_id,
+            current_user
         )
 
     @staticmethod
     async def get_all_analysis(
-        db: AsyncSession
+        db: AsyncSession,
+        current_user
     ):
-        return await AnalysisRepository.get_all(db)
+        return await AnalysisRepository.get_all_for_user(
+            db,
+            current_user
+        )
