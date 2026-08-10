@@ -109,6 +109,22 @@ class OrganizationService:
                 detail="You can update only your organization."
             )
 
+        if (
+            data.domain is not None
+            and data.domain != organization.domain
+        ):
+
+            existing = await OrganizationRepository.get_by_domain(
+                db,
+                data.domain,
+            )
+
+            if existing:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Organization domain already exists."
+                )
+
         return await OrganizationRepository.update(
             db,
             organization,
@@ -132,11 +148,21 @@ class OrganizationService:
                 detail="Organization not found."
             )
 
+        # Deleting an organization cascades to its teams and users, so report
+        # what actually went with it instead of a bare success message.
+
+        deleted_users, deleted_teams = await OrganizationRepository.count_cascade(
+            db,
+            organization.id,
+        )
+
         await OrganizationRepository.delete(
             db,
             organization,
         )
 
         return {
-            "message": "Organization deleted successfully."
+            "message": "Organization deleted successfully.",
+            "deleted_users": deleted_users,
+            "deleted_teams": deleted_teams,
         }

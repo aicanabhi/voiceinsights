@@ -1,109 +1,90 @@
-from bson import ObjectId
+from typing import Optional
+
+from pymongo import ReturnDocument
 
 from app.db.mongo import organization_agents_collection
 
 
 class OrganizationAgentRepository:
+    """An agent is keyed by (organization_id, provider) -- one configuration
+    per provider per organization."""
 
     @staticmethod
-    async def create(agent_data: dict):
+    async def create(agent_data: dict) -> str:
         result = await organization_agents_collection.insert_one(agent_data)
         return str(result.inserted_id)
 
     @staticmethod
-    async def get_by_organization(organization_id: int):
+    async def get_by_organization(organization_id: int) -> list[dict]:
 
-        print("========== Mongo Search ==========")
-        print("Organization ID:", organization_id)
-
-        agent = await organization_agents_collection.find_one(
+        cursor = organization_agents_collection.find(
             {
                 "organization_id": organization_id
             }
         )
 
-        print("Agent Found:", agent)
-        print("==================================")
-
-        if agent:
-            agent["_id"] = str(agent["_id"])
-
-        return agent
+        return await cursor.to_list(length=None)
 
     @staticmethod
     async def get_by_organization_provider(
         organization_id: int,
         provider: str
-   ):
+    ) -> Optional[dict]:
 
-        print("========== Mongo Search ==========")
-        print("Organization:", organization_id)
-        print("Provider:", provider)
-
-        agent = await organization_agents_collection.find_one(
+        return await organization_agents_collection.find_one(
             {
                 "organization_id": organization_id,
                 "provider": provider
             }
         )
 
-        print("Agent:", agent)
-        print("==================================")
-
-        if agent:
-            agent["_id"] = str(agent["_id"])
-
-        return agent
-
     @staticmethod
-    async def get_all():
+    async def get_all() -> list[dict]:
 
         cursor = organization_agents_collection.find()
 
-        agents = await cursor.to_list(length=None)
-
-        for agent in agents:
-            agent["_id"] = str(agent["_id"])
-
-        return agents
+        return await cursor.to_list(length=None)
 
     @staticmethod
     async def update(
         organization_id: int,
+        provider: str,
         data: dict
-    ):
+    ) -> Optional[dict]:
 
-        await organization_agents_collection.update_one(
+        return await organization_agents_collection.find_one_and_update(
             {
-                "organization_id": organization_id
+                "organization_id": organization_id,
+                "provider": provider
             },
             {
                 "$set": data
-            }
+            },
+            return_document=ReturnDocument.AFTER
         )
-
-        updated_agent = await organization_agents_collection.find_one(
-            {
-                "organization_id": organization_id
-            }
-        )
-
-        if updated_agent:
-            updated_agent["_id"] = str(updated_agent["_id"])
-
-        return updated_agent
 
     @staticmethod
     async def delete(
-        organization_id: int
-    ):
+        organization_id: int,
+        provider: str
+    ) -> int:
 
-        await organization_agents_collection.delete_one(
+        result = await organization_agents_collection.delete_one(
+            {
+                "organization_id": organization_id,
+                "provider": provider
+            }
+        )
+
+        return result.deleted_count
+
+    @staticmethod
+    async def delete_by_organization(organization_id: int) -> int:
+
+        result = await organization_agents_collection.delete_many(
             {
                 "organization_id": organization_id
             }
         )
 
-        return {
-            "message": "Organization Agent deleted successfully"
-        }
+        return result.deleted_count
