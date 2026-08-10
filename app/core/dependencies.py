@@ -37,16 +37,35 @@ async def get_current_user(
         if user_id is None:
             raise credentials_exception
 
-    except JWTError:
+        user_id = int(user_id)
+
+    except (JWTError, ValueError):
         raise credentials_exception
 
-    user = await UserRepository.get_by_id(
+    user = await UserRepository.get_by_id_with_organization(
         db,
-        int(user_id),
+        user_id,
     )
 
     if user is None:
         raise credentials_exception
+
+    if not user.is_active:
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is inactive",
+        )
+
+    if (
+        user.organization is not None
+        and not user.organization.is_active
+    ):
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your organization is inactive",
+        )
 
     return user
 

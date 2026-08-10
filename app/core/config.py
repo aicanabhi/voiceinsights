@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,6 +30,20 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
     REDIS_DB: int
+
+    # Transcription worker
+    # Run the poller inside the API process (handy in dev). In production
+    # leave this false and run `python -m app.worker` as its own process.
+    RUN_WORKER_IN_APP: bool = False
+    WORKER_POLL_SECONDS: float = 5.0
+    WORKER_CONCURRENCY: int = 2
+    WORKER_MAX_ATTEMPTS: int = 3
+
+    # Super Admin seed (used only by app/scripts/create_super_admin.py)
+    SUPER_ADMIN_EMAIL: Optional[str] = None
+    SUPER_ADMIN_PASSWORD: Optional[str] = None
+    SUPER_ADMIN_NAME: str = "Super Admin"
+    SUPER_ADMIN_PHONE: Optional[str] = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

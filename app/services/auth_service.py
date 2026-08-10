@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.user_repository import UserRepository
@@ -20,16 +21,25 @@ class AuthService:
         )
 
         if not user:
-            raise Exception("Invalid email or password")
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid email or password"
+            )
 
         if not verify_password(
             password,
             user.password_hash
         ):
-            raise Exception("Invalid email or password")
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid email or password"
+            )
 
         if not user.is_active:
-            raise Exception("User is inactive")
+            raise HTTPException(
+                status_code=403,
+                detail="User is inactive"
+            )
 
         token = create_access_token(
             {
