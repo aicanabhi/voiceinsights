@@ -1,16 +1,31 @@
+from typing import Optional
 from pydantic import BaseModel
 
-
-class AgentRules(BaseModel):
-    check_greeting: bool
-    check_closing: bool
-    check_empathy: bool
-    check_professionalism: bool
+from app.models.enums import TranscriptProvider, Language
 
 
 class OrganizationAgentCreate(BaseModel):
     organization_id: int
     agent_name: str
-    description: str
+
+    provider: TranscriptProvider
+    model: str
+    language: Language
+
     system_prompt: str
-    rules: AgentRules
+    security_key: str
+
+    status: str = "ACTIVE"
+
+
+class OrganizationAgentUpdate(BaseModel):
+    agent_name: Optional[str] = None
+
+    provider: Optional[TranscriptProvider] = None
+    model: Optional[str] = None
+    language: Optional[Language] = None
+
+    system_prompt: Optional[str] = None
+    security_key: Optional[str] = None
+
+    status: Optional[str] = None

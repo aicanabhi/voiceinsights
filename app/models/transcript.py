@@ -1,3 +1,5 @@
+
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -36,6 +38,11 @@ class Transcript(Base):
         nullable=False
     )
 
+    audio_base64 = Column(
+        Text,
+        nullable=True
+    )
+
     language = Column(
         String(20),
         default="en"
@@ -45,6 +52,8 @@ class Transcript(Base):
         String(20),
         default="PENDING"
     )
+
+    
 
     created_at = Column(
         DateTime(timezone=True),

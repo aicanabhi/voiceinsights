@@ -11,3 +11,8 @@ class TranscriptProvider(str, Enum):
     DEEPGRAM = "DEEPGRAM"
     ELEVENLABS = "ELEVENLABS"
     CARTESIA = "CARTESIA"
+
+class Language(str, Enum):
+    ENGLISH = "en"
+    HINDI = "hi"
+    HINGLISH = "hinglish"

@@ -31,7 +31,7 @@ class Media(Base):
         nullable=False
     )
 
-    agent_id = Column(
+    calling_agent_id = Column(
         Integer,
         ForeignKey("users.id",ondelete="CASCADE"),
         nullable=True
@@ -72,6 +72,21 @@ class Media(Base):
         default="UPLOADED"
     )
 
+    provider = Column(
+        String(50),
+        nullable=False
+    )
+
+    model = Column(
+        String(100),
+        nullable=False
+    )
+
+    language = Column(
+        String(50),
+        nullable=False
+    )
+
     is_deleted = Column(
         Boolean,
         default=False
@@ -88,9 +103,9 @@ class Media(Base):
         "Organization"
     )
 
-    agent = relationship(
+    calling_agent = relationship(
         "User",
-        foreign_keys=[agent_id],
+        foreign_keys=[calling_agent_id],
         back_populates="assigned_media"
     )
 

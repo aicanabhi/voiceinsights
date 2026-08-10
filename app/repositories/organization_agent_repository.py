@@ -1,3 +1,5 @@
+from bson import ObjectId
+
 from app.db.mongo import organization_agents_collection
 
 
@@ -23,4 +25,85 @@ class OrganizationAgentRepository:
         print("Agent Found:", agent)
         print("==================================")
 
+        if agent:
+            agent["_id"] = str(agent["_id"])
+
         return agent
+
+    @staticmethod
+    async def get_by_organization_provider(
+        organization_id: int,
+        provider: str
+   ):
+
+        print("========== Mongo Search ==========")
+        print("Organization:", organization_id)
+        print("Provider:", provider)
+
+        agent = await organization_agents_collection.find_one(
+            {
+                "organization_id": organization_id,
+                "provider": provider
+            }
+        )
+
+        print("Agent:", agent)
+        print("==================================")
+
+        if agent:
+            agent["_id"] = str(agent["_id"])
+
+        return agent
+
+    @staticmethod
+    async def get_all():
+
+        cursor = organization_agents_collection.find()
+
+        agents = await cursor.to_list(length=None)
+
+        for agent in agents:
+            agent["_id"] = str(agent["_id"])
+
+        return agents
+
+    @staticmethod
+    async def update(
+        organization_id: int,
+        data: dict
+    ):
+
+        await organization_agents_collection.update_one(
+            {
+                "organization_id": organization_id
+            },
+            {
+                "$set": data
+            }
+        )
+
+        updated_agent = await organization_agents_collection.find_one(
+            {
+                "organization_id": organization_id
+            }
+        )
+
+        if updated_agent:
+            updated_agent["_id"] = str(updated_agent["_id"])
+
+        return updated_agent
+
+    @staticmethod
+    async def delete(
+        organization_id: int
+    ):
+
+        await organization_agents_collection.delete_one(
+            {
+                "organization_id": organization_id
+            }
+        )
+
+        return {
+            "message": "Organization Agent deleted successfully"
+        }

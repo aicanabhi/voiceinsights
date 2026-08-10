@@ -9,6 +9,7 @@ from app.api.v1.transcript import router as transcript_router
 from app.api.v1.analysis import router as analysis_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.organization_agent import router as organization_agent_router
+from app.api.v1.provider import router as provider_router
 
 api_router = APIRouter()
 
@@ -21,3 +22,4 @@ api_router.include_router(transcript_router)
 api_router.include_router(analysis_router)
 api_router.include_router(dashboard_router)
 api_router.include_router(organization_agent_router)
+api_router.include_router(provider_router)

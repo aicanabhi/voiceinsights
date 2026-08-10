@@ -9,6 +9,7 @@ from app.models.media import Media
 from app.models.analysis import Analysis
 
 
+
 class DashboardRepository:
 
     @staticmethod
@@ -33,13 +34,53 @@ class DashboardRepository:
         analysis = await db.scalar(
             select(func.count(Analysis.id))
         )
+        avg_score = await db.scalar(
+            select(func.avg(Analysis.overall_score))
+        )
+
+        avg_compliance = await db.scalar(
+            select(func.avg(Analysis.compliance_score))
+        )
+
+        avg_professionalism = await db.scalar(
+            select(func.avg(Analysis.professionalism_score))
+        )
+
+        avg_empathy = await db.scalar(
+            select(func.avg(Analysis.empathy_score))
+        )
+        positive = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.sentiment == "Positive"
+            )
+        )
+
+        neutral = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.sentiment == "Neutral"
+            )
+        )
+
+        negative = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.sentiment == "Negative"
+            )
+        )
 
         return {
             "organizations": organizations,
             "teams": teams,
             "users": users,
             "uploaded_calls": media,
-            "completed_analysis": analysis
+            "completed_analysis": analysis,
+            "average_score": round(avg_score or 0, 2),
+            "average_compliance": round(avg_compliance or 0, 2),
+            "average_professionalism": round(avg_professionalism or 0, 2),
+            "average_empathy": round(avg_empathy or 0, 2),
+
+            "positive_calls": positive or 0,
+            "neutral_calls": neutral or 0,
+            "negative_calls": negative or 0,
         }
 
     @staticmethod
@@ -81,6 +122,50 @@ class DashboardRepository:
                 Analysis.media_id.in_(media_ids)
             )
         )
+        avg_score = await db.scalar(
+            select(func.avg(Analysis.overall_score)).where(
+                Analysis.media_id.in_(media_ids)
+            )
+        )
+
+        avg_compliance = await db.scalar(
+            select(func.avg(Analysis.compliance_score)).where(
+                Analysis.media_id.in_(media_ids)
+            )
+        )
+
+        avg_professionalism = await db.scalar(
+            select(func.avg(Analysis.professionalism_score)).where(
+                Analysis.media_id.in_(media_ids)
+            )
+        )
+
+        avg_empathy = await db.scalar(
+            select(func.avg(Analysis.empathy_score)).where(
+                Analysis.media_id.in_(media_ids)
+            )
+        )
+
+        positive = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.media_id.in_(media_ids),
+                Analysis.sentiment == "Positive"
+            )
+        )
+
+        neutral = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.media_id.in_(media_ids),
+                Analysis.sentiment == "Neutral"
+            )
+        )
+
+        negative = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.media_id.in_(media_ids),
+                Analysis.sentiment == "Negative"
+            )
+        )
 
 
         return {
@@ -88,7 +173,15 @@ class DashboardRepository:
             "teams": teams,
             "agents": agents,
             "uploaded_calls": uploaded_calls,
-            "completed_analysis": completed_analysis
+            "completed_analysis": completed_analysis,
+            "average_score": round(avg_score or 0, 2),
+            "average_compliance": round(avg_compliance or 0, 2),
+            "average_professionalism": round(avg_professionalism or 0, 2),
+            "average_empathy": round(avg_empathy or 0, 2),
+            "positive_calls": positive or 0,
+            "neutral_calls": neutral or 0,
+            "negative_calls": negative or 0,
+
         }
 
     @staticmethod
@@ -117,10 +210,72 @@ class DashboardRepository:
             )
         )
 
+        media_ids = select(Media.id).where(
+            Media.calling_agent_id.in_(
+                select(User.id).where(
+                    User.team_id == team_id
+                )
+            )
+        )
+        completed_analysis = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.media_id.in_(media_ids)
+            )
+        )
+
+        avg_score = await db.scalar(
+            select(func.avg(Analysis.overall_score)).where(
+                Analysis.media_id.in_(media_ids)
+            )
+        )
+        avg_compliance = await db.scalar(
+            select(func.avg(Analysis.compliance_score)).where(
+                Analysis.media_id.in_(media_ids)
+            )
+        )
+        avg_professionalism = await db.scalar(
+            select(func.avg(Analysis.professionalism_score)).where(
+                Analysis.media_id.in_(media_ids)
+            )
+        )
+        avg_empathy = await db.scalar(
+            select(func.avg(Analysis.empathy_score)).where(
+                Analysis.media_id.in_(media_ids)
+            )
+        )
+        positive = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.media_id.in_(media_ids),
+                Analysis.sentiment == "Positive"
+            )
+        )
+
+        neutral = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.media_id.in_(media_ids),
+                Analysis.sentiment == "Neutral"
+            )
+        )
+
+        negative = await db.scalar(
+            select(func.count(Analysis.id)).where(
+                Analysis.media_id.in_(media_ids),
+                Analysis.sentiment == "Negative"
+            )
+        )
+
         return {
             "team": team.name,
             "agents": agents,
-            "uploaded_calls": uploaded_calls
+            "uploaded_calls": uploaded_calls,
+            "completed_analysis": completed_analysis or 0,
+            "average_score": round(avg_score or 0, 2),
+            "average_compliance": round(avg_compliance or 0, 2),
+            "average_professionalism": round(avg_professionalism or 0, 2),
+            "average_empathy": round(avg_empathy or 0, 2),
+            "positive_calls": positive or 0,
+            "neutral_calls": neutral or 0,
+            "negative_calls": negative or 0,
         }
     @staticmethod
     async def get_agent_dashboard(
@@ -147,12 +302,12 @@ class DashboardRepository:
             )
          
         media_ids = select(Media.id).where(
-            Media.agent_id == agent_id
+            Media.calling_agent_id == agent_id
         )
 
         uploaded_calls = await db.scalar(
             select(func.count(Media.id)).where(
-                Media.agent_id == agent_id
+                Media.calling_agent_id == agent_id
             )
         )
 
