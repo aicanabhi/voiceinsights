@@ -1,10 +1,11 @@
-import base64
 from deepgram import DeepgramClient
-from app.core.config import settings
 
+from app.services.transcript_normalizer import normalize_utterances
 
 
 class DeepgramService:
+
+    supports_diarization = True
 
     def __init__(self, api_key:str):
         self.client = DeepgramClient(
@@ -16,7 +17,6 @@ class DeepgramService:
         
         with open(file_path, "rb") as audio:
             audio_data = audio.read()
-            audio_base64 = base64.b64encode(audio_data).decode("utf-8")
 
         response = self.client.listen.v1.media.transcribe_file(
             request=audio_data,
@@ -34,28 +34,20 @@ class DeepgramService:
         transcript = alternative.transcript
         language = response.results.channels[0].detected_language
 
-        speaker_segments = []
-
-        for utt in response.results.utterances:
-            print(
-                f"Speaker: {utt.speaker} | "
-                f"Start: {utt.start} | "
-                f"End: {utt.end} | "
-                f"Text: {utt.transcript}"
-            )
-
-            speaker_segments.append({
+        speaker_segments = normalize_utterances(
+            {
                 "speaker": utt.speaker,
                 "start": utt.start,
                 "end": utt.end,
                 "text": utt.transcript,
-                "confidence": utt.confidence
-            })
+                "confidence": utt.confidence,
+            }
+            for utt in (response.results.utterances or [])
+        )
 
         return {
             "transcript": transcript,
             "language": language,
             "speaker_segments": speaker_segments,
-            "audio_base64": audio_base64,
             "raw_response": response
         }
