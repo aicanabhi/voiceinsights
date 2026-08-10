@@ -38,11 +38,6 @@ class Transcript(Base):
         nullable=False
     )
 
-    audio_base64 = Column(
-        Text,
-        nullable=True
-    )
-
     language = Column(
         String(20),
         default="en"

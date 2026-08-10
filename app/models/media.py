@@ -4,13 +4,17 @@ from sqlalchemy import (
     String,
     ForeignKey,
     DateTime,
-    Boolean
+    Boolean,
+    Enum,
+    Index,
+    Text
 )
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.db.base import Base
+from app.models.enums import MediaStatus
 
 
 class Media(Base):
@@ -67,9 +71,32 @@ class Media(Base):
         String(100)
     )
 
-    upload_status = Column(
-        String(30),
-        default="UPLOADED"
+    status = Column(
+        Enum(MediaStatus),
+        nullable=False,
+        default=MediaStatus.PENDING,
+        index=True
+    )
+
+    error_message = Column(
+        Text,
+        nullable=True
+    )
+
+    attempts = Column(
+        Integer,
+        nullable=False,
+        default=0
+    )
+
+    started_at = Column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+
+    completed_at = Column(
+        DateTime(timezone=True),
+        nullable=True
     )
 
     provider = Column(
@@ -95,6 +122,15 @@ class Media(Base):
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now()
+    )
+
+    # The worker polls on (status, created_at) -- oldest PENDING first.
+    __table_args__ = (
+        Index(
+            "ix_media_status_created_at",
+            "status",
+            "created_at"
+        ),
     )
 
     # Relationships

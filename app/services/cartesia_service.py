@@ -1,9 +1,12 @@
 import requests
 
-from app.core.config import settings
 
 
 class CartesiaService:
+
+    # Cartesia's STT returns plain text with no speaker labels, so calls
+    # transcribed here have no speaker breakdown and no call metrics.
+    supports_diarization = False
 
     def __init__(self, api_key: str):
         self.api_key = api_key
@@ -21,24 +24,19 @@ class CartesiaService:
             "Cartesia-Version": "2026-03-01"
         }
 
-        files = {
-            "file": open(file_path, "rb")
-        }
-
         data = {
             "model": model,
             "language": "en"
         }
 
-        response = requests.post(
-            url,
-            headers=headers,
-            files=files,
-            data=data
-        )
+        with open(file_path, "rb") as audio_file:
 
-        print("Status Code:", response.status_code)
-        print(response.text)
+            response = requests.post(
+                url,
+                headers=headers,
+                files={"file": audio_file},
+                data=data
+            )
 
         response.raise_for_status()
 
