@@ -41,14 +41,25 @@ class TeamRepository:
     @staticmethod
     async def get_by_name(
         db: AsyncSession,
-        name: str
+        name: str,
+        organization_id: int
     ):
+        """Team names are only unique within an organization.
+
+        first() rather than scalar_one_or_none(): rows created before the
+        unique constraint existed could still be duplicated, and this is the
+        duplicate check itself -- it must not be the thing that 500s.
+        """
+
         result = await db.execute(
-            select(Team).where(
-                Team.name == name
+            select(Team)
+            .where(
+                Team.name == name,
+                Team.organization_id == organization_id,
             )
+            .limit(1)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     @staticmethod
     async def update(

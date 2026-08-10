@@ -4,7 +4,8 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
-    ForeignKey
+    ForeignKey,
+    UniqueConstraint
 )
 
 from sqlalchemy.orm import relationship
@@ -54,13 +55,24 @@ class Team(Base):
         onupdate=func.now()
     )
 
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "name",
+            name="uq_teams_organization_name",
+        ),
+    )
+
     organization = relationship(
         "Organization",
         back_populates="teams"
     )
 
+    # Deleting a team must NOT delete its members -- users.team_id is
+    # ON DELETE SET NULL, so leave the cascade to the database. A
+    # delete-orphan cascade here would wipe the employees instead.
     users = relationship(
         "User",
         back_populates="team",
-        cascade="all, delete-orphan"
+        passive_deletes=True
     )

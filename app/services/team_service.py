@@ -67,16 +67,14 @@ class TeamService:
 
         existing_team = await TeamRepository.get_by_name(
             db,
-            team_data.name
+            team_data.name,
+            team_data.organization_id
         )
 
-        if (
-            existing_team
-            and existing_team.organization_id == team_data.organization_id
-        ):
+        if existing_team:
             raise HTTPException(
                 status_code=400,
-                detail="Team already exists."
+                detail="A team with this name already exists in this organization."
             )
 
         team = Team(

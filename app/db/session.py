@@ -8,7 +8,9 @@ from app.core.config import settings
 
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=True,
+    # echo logs every statement *with its bound parameters* -- password
+    # hashes, emails, transcript text. Debug builds only.
+    echo=settings.DEBUG,
 )
 
 AsyncSessionLocal = async_sessionmaker(
