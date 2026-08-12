@@ -3,6 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -46,6 +47,18 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# The browser refuses cross-origin XHR without this. CORS_ORIGINS is a comma
+# separated list -- keep it to the exact frontend origins, never "*", because
+# the frontend sends an Authorization header.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGIN_LIST,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/")
 async def root():

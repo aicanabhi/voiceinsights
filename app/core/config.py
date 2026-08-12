@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     REDIS_PORT: int
     REDIS_DB: int
 
+    # CORS -- comma separated list of frontend origins allowed to call the API.
+    # Defaults cover the Vite dev server on both loopback spellings.
+    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+
     # Transcription worker
     # Run the poller inside the API process (handy in dev). In production
     # leave this false and run `python -m app.worker` as its own process.
@@ -49,6 +53,14 @@ class Settings(BaseSettings):
         env_file=".env",
         extra="ignore"
     )
+
+    @property
+    def CORS_ORIGIN_LIST(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.CORS_ORIGINS.split(",")
+            if origin.strip()
+        ]
 
     @property
     def DATABASE_URL(self):
