@@ -195,7 +195,18 @@ class MediaService:
         """Accept 1..N recordings and queue them. Returns immediately -- the
         worker does the transcription."""
 
-        organization_id = current_user.organization_id
+        calling_agent = await UserRepository.get_by_id(db, calling_agent_id)
+
+        if calling_agent is None or calling_agent.organization_id is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Calling agent not found or not linked to an organization."
+            )
+
+        if current_user.role == UserRole.SUPER_ADMIN:
+            organization_id = calling_agent.organization_id
+        else:
+            organization_id = current_user.organization_id
 
         if organization_id is None:
             raise HTTPException(
@@ -203,12 +214,7 @@ class MediaService:
                 detail="Your account is not linked to an organization."
             )
 
-        calling_agent = await UserRepository.get_by_id(db, calling_agent_id)
-
-        if (
-            calling_agent is None
-            or calling_agent.organization_id != organization_id
-        ):
+        if calling_agent.organization_id != organization_id:
             raise HTTPException(
                 status_code=404,
                 detail="Calling agent not found in your organization."
