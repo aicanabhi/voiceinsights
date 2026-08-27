@@ -26,9 +26,9 @@ class MediaResponse(BaseModel):
     started_at: datetime | None = None
     completed_at: datetime | None = None
 
-    provider: str
-    model: str
-    language: str
+    provider: str | None = None
+    model: str | None = None
+    language: str | None = None
     is_deleted: bool
     created_at: datetime
 

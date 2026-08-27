@@ -4,5 +4,6 @@ alembic/.env
 venv/
 __pycache__/
 .vscode/
-*.pycuploads/
+.idea/
+*.pyc
 uploads/
